@@ -1,0 +1,47 @@
+class World
+operations
+public Run : () ==> ()
+Run() == 
+(
+    dcl employee : Employee := new Employee("1234", <SoftwareEngineer>);
+    dcl employee2 : Employee := new Employee("5678", <Salesman>);
+    dcl employee3 : Employee := new Employee("1111", <Lawyer>);
+    dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    dcl shift2 : Shift := new Shift("3456",{<SoftwareEngineer> |-> 1, <Lawyer> |-> 1});
+    dcl timeslot : Global`Timeslot := mk_(30, 36);
+    dcl timeslot2 : Global`Timeslot := mk_(50, 58);
+    dcl time: Time := new Time(0, 70);
+    dcl notificationManager : NotificationManager := new NotificationManager(time);
+    dcl ctrl : DutyRosterController := new DutyRosterController(notificationManager, new Payment());
+
+    ctrl.AddEmployeeToDutyRoster(employee);
+    ctrl.AddEmployeeToDutyRoster(employee2);
+    ctrl.AddEmployeeToDutyRoster(employee3);
+
+    ctrl.AddShiftToDutyRoster(timeslot, shift);
+    ctrl.AddShiftToDutyRoster(timeslot2, shift2);
+
+    ctrl.AddEmployeeToShift(employee, shift);
+    ctrl.AddEmployeeToShift(employee2, shift);
+    ctrl.AddEmployeeToShift(employee3, shift2);
+
+    ctrl.CreateNotification(shift, employee, 20);
+    ctrl.CreateNotification(shift, employee2, 0);
+    ctrl.CreateNotification(shift2, employee3, 10);
+
+    IO`println("Get Time slots matching employee before simulation");
+    IO`println(ctrl.GetAvailableTimeslotsMatchingExpertise(employee));
+    notificationManager.Run();
+    -- printout of salary for all employees for whole simulation
+    IO`println("Salary for employee:");
+    IO`println(ctrl.PaymentOverPeriod(employee, 0, 70));
+    IO`println("Salary for employee2:");
+    IO`println(ctrl.PaymentOverPeriod(employee2, 0, 70));
+    IO`println("Salary for employee3:");
+    IO`println(ctrl.PaymentOverPeriod(employee3, 0, 70));
+    IO`println("Get Time slots matching employee after simulation");
+    IO`println(ctrl.GetAvailableTimeslotsMatchingExpertise(employee));
+    IO`println("The time slots employee is assigned to:");
+    IO`println(ctrl.GetAssignedTimeslots(employee));
+)
+end World

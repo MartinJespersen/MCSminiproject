@@ -1,0 +1,17 @@
+class EmployeeTest is subclass of TestCase, Global
+operations
+
+protected runTest : () ==> ()
+runTest() ==
+(AddTimeslotTest());
+
+
+protected AddTimeslotTest: () ==> ()
+AddTimeslotTest() ==
+(
+	dcl timeslot: Timeslot := mk_(30, 40); 
+	dcl employee: Employee := new Employee("1234", <SoftwareEngineer>);
+	employee.AddTimeslot(timeslot);
+	assertTrue(timeslot in set employee.GetAssignedShifts());
+)
+end EmployeeTest

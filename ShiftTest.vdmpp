@@ -1,0 +1,39 @@
+class ShiftTest is subclass of TestCase
+operations
+
+protected runTest : () ==> ()
+runTest() ==
+(AddEmployeeToShiftTest();
+IsShiftVacantTest();
+IsShiftVacantFalseTest());
+
+
+protected AddEmployeeToShiftTest: () ==> ()
+AddEmployeeToShiftTest() ==
+(
+	dcl employee: Employee := new Employee("1234", <SoftwareEngineer>);
+	dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    shift.AddEmployeeToShift(employee);
+    let employeesAddedToShift = shift.GetEmployeesOnDuty()
+    in
+	    assertTrue(employee in set employeesAddedToShift);
+);
+
+
+protected IsShiftVacantTest: () ==> ()
+IsShiftVacantTest() ==
+(
+	dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    assertTrue(shift.IsShiftVacant(<Salesman>));
+);
+
+protected IsShiftVacantFalseTest: () ==> ()
+IsShiftVacantFalseTest() ==
+(
+    dcl employee: Employee := new Employee("1234", <Salesman>);
+	dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    shift.AddEmployeeToShift(employee);
+    assertTrue(shift.IsShiftVacant(<Salesman>) = false);
+)
+
+end ShiftTest

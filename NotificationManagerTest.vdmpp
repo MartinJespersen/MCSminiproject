@@ -1,0 +1,26 @@
+class NotificationManagerTest is subclass of TestCase, Global
+operations
+
+protected runTest : () ==> ()
+runTest() ==
+(AddNotificationTest());
+
+protected AddNotificationTest: () ==> ()
+AddNotificationTest() ==
+(
+    dcl notificationTime: nat := 10;
+    dcl notificationManager: NotificationManager := new NotificationManager(new Time(0, 50));
+	dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    dcl employee: Employee := new Employee("1234", <SoftwareEngineer>);
+
+    notificationManager.AddNotification(shift, employee, notificationTime);
+    let notificationsPrTimePeriod = notificationManager.GetNotificationsPrTimePeriod(),
+        notificationTimes = notificationManager.GetNotificationTimes() 
+            in
+            (
+                assertTrue(notificationTime in set dom(notificationsPrTimePeriod));
+                assertTrue(mk_(shift, employee) in set notificationsPrTimePeriod(notificationTime));
+                assertTrue(notificationTime in set (elems notificationTimes));
+            )
+)
+end NotificationManagerTest

@@ -1,0 +1,112 @@
+class DutyRosterController is subclass of Global
+
+instance variables
+private dutyRoster: map Timeslot to Shift := {|->};
+private employees: set of Employee := {};
+private notificationManager: NotificationManager;
+private time: Time;
+private payment : Payment;
+
+inv forall emp in set employees & emp.GetAssignedShifts() subset dom(dutyRoster);
+
+operations
+
+public DutyRosterController : NotificationManager * Payment ==> DutyRosterController
+DutyRosterController(notifyMan, p) ==
+(
+    notificationManager := notifyMan;
+    time := notificationManager.GetTime();
+    payment := p;
+
+);
+
+public AddEmployeeToShift : Employee * Shift ==> ()
+AddEmployeeToShift(employee, shift) ==
+    let timeslot = shift.GetTimeslot()
+        in
+        (
+            shift.AddEmployeeToShift(employee);
+            employee.AddTimeslot(timeslot);
+        )
+pre shift.GetTimeslot() <> nil and
+    IsEmployeePartOfDutyRoster(employee, employees) and 
+    IsShiftPartOfDutyRoster(shift, rng(dutyRoster))
+post employee in set shift.GetEmployeesOnDuty() and
+    shift.GetTimeslot() in set employee.GetAssignedShifts();
+
+public AddShiftToDutyRoster : Timeslot * Shift ==> ()
+AddShiftToDutyRoster(timeslot,shift) == 
+(
+    dutyRoster := dutyRoster munion {timeslot |-> shift};
+    shift.AddTimeslot(timeslot);
+)
+pre shift.GetTimeslot() = nil and
+    not (IsShiftPartOfDutyRoster(shift, rng(dutyRoster))) and
+    IsTimeslotPossible(timeslot, dom(dutyRoster))
+post shift.GetTimeslot() <> nil;
+
+public AddEmployeeToDutyRoster : Employee ==> ()
+AddEmployeeToDutyRoster(emp) ==
+    employees := employees union {emp}
+pre not IsEmployeePartOfDutyRoster(emp, employees);
+
+public GetAvailableTimeslotsMatchingExpertise : Employee ==> set of Timeslot
+GetAvailableTimeslotsMatchingExpertise(emp) ==
+    let prof = emp.GetProfession()
+    in
+        return {t | t in set dom(dutyRoster) & 
+            let shift = dutyRoster(t),
+                mk_(startTime,-) = t 
+                in
+                    shift.IsShiftVacant(prof) and startTime >= time.GetTime() and emp not in set shift.GetEmployeesOnDuty()}
+post RESULT subset dom(dutyRoster);
+
+public GetAssignedTimeslots : Employee ==> set of Timeslot
+GetAssignedTimeslots(emp) ==
+    return emp.GetAssignedShifts()
+pre IsEmployeePartOfDutyRoster(emp, employees)
+post RESULT subset dom(dutyRoster);
+
+public CreateNotification : Shift * Employee * nat ==> ()
+CreateNotification(shift, emp, notificationTime) ==
+    let mk_(startTime, -) = (inverse dutyRoster)(shift) in
+        notificationManager.AddNotification(shift, emp, startTime - notificationTime)
+pre IsEmployeePartOfShift(shift, emp) and
+    IsShiftInTheFuture(shift);
+
+
+pure private IsShiftInTheFuture : Shift ==> bool
+IsShiftInTheFuture(shift) ==
+    let mk_(startTime, -) = (inverse dutyRoster)(shift) in
+        return startTime > time.GetTime();
+
+public PaymentOverPeriod: Employee * nat * nat ==> nat
+PaymentOverPeriod(emp, from, until) ==
+    payment.PaymentOverPeriod(emp, from, until)
+pre from < until and 
+    IsEmployeePartOfDutyRoster(emp, employees);
+
+functions
+
+private IsEmployeePartOfShift: Shift * Employee -> bool
+IsEmployeePartOfShift(shift, emp) ==
+    emp in set shift.GetEmployeesOnDuty();
+
+private IsEmployeePartOfDutyRoster : Employee * set of Employee -> bool
+IsEmployeePartOfDutyRoster(emp, allEmp) == 
+    emp.GetId() in set {empIter.GetId() | empIter in set allEmp};
+    
+public IsShiftPartOfDutyRoster : Shift * set of Shift -> bool
+IsShiftPartOfDutyRoster(shift, allShifts) == 
+    shift.GetId() in set {shiftIter.GetId() | shiftIter in set allShifts};
+
+public IsTimeslotPossible : Timeslot * set of Timeslot -> bool
+IsTimeslotPossible(timeslot, allTimeslots) == 
+    let mk_(startTime, endTime) = timeslot in
+        forall slot in set allTimeslots & 
+            let mk_(setStartTime, setEndTime) = slot in
+                endTime <= setStartTime or startTime >= setEndTime;
+
+
+
+end DutyRosterController

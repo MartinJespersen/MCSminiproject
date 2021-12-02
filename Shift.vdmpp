@@ -1,0 +1,78 @@
+class Shift is subclass of Global
+
+instance variables
+private id : ID;
+private requiredProfessions : map Profession to nat;
+private professionsCurrentlyAssigned : map Profession to nat; 
+
+inv dom(professionsCurrentlyAssigned) = dom(requiredProfessions) and
+forall prof in set dom(professionsCurrentlyAssigned) & professionsCurrentlyAssigned(prof) <= requiredProfessions(prof);
+inv card dom(requiredProfessions) <> 0; 
+
+
+private employeesOnDuty : set of Employee := {};
+private timeslot: [Timeslot] := nil;
+
+inv dom(professionsCurrentlyAssigned) subset dom(requiredProfessions);
+inv forall profession in set (dom(requiredProfessions) inter dom(professionsCurrentlyAssigned)) &
+    professionsCurrentlyAssigned(profession) <= requiredProfessions(profession)
+
+operations
+public Shift : ID * map Profession to nat ==> Shift
+Shift(shiftId, reqProf) ==
+(
+    id := shiftId;
+    requiredProfessions := reqProf;
+    professionsCurrentlyAssigned := { prof |-> 0 | prof in set dom(reqProf)}
+) 
+pre dom(reqProf) <> {} and forall i in set rng reqProf & i <> 0;
+
+public AddEmployeeToShift : Employee ==> ()
+AddEmployeeToShift(employee) ==
+(
+    employeesOnDuty := employeesOnDuty union {employee}; 
+    def profession = employee.GetProfession()
+    in
+        professionsCurrentlyAssigned(profession) := professionsCurrentlyAssigned(profession) + 1;
+)
+pre forall emp in set employeesOnDuty & employee.GetId() <> emp.GetId() and 
+employee.GetProfession() in set dom professionsCurrentlyAssigned;
+
+
+
+
+pure public GetAvailableSlots: Profession ==> nat 
+GetAvailableSlots(prof) ==
+    return requiredProfessions(prof) - professionsCurrentlyAssigned(prof)
+pre prof in set dom requiredProfessions and prof in set dom professionsCurrentlyAssigned
+post RESULT <=  requiredProfessions(prof) and RESULT >= 0;
+
+public AddTimeslot: Timeslot ==> ()
+AddTimeslot(slot) ==
+    timeslot := slot;
+
+pure public GetTimeslot: () ==> [Timeslot]
+GetTimeslot() ==
+    return timeslot;
+
+pure public IsShiftVacant : Profession ==> bool
+IsShiftVacant(prof) ==
+    return prof in set dom requiredProfessions and 
+    professionsCurrentlyAssigned(prof) < requiredProfessions(prof);
+
+pure public GetRequiredProfessions : () ==> map Profession to nat
+GetRequiredProfessions() == 
+    return requiredProfessions;  
+
+pure public GetProfessionsCurrentlyAssigned : () ==> map Profession to nat
+GetProfessionsCurrentlyAssigned() == 
+    return professionsCurrentlyAssigned; 
+
+pure public GetId : () ==> ID
+GetId() == 
+    return id; 
+
+pure public GetEmployeesOnDuty: () ==> set of Employee
+GetEmployeesOnDuty() ==
+    return employeesOnDuty;
+end Shift 

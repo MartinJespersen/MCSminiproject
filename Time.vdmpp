@@ -1,0 +1,35 @@
+class Time
+
+values
+private timeStep : nat = 1;
+
+instance variables
+private currentTime: nat := 0;
+private endOfSimulationTime: nat;
+
+operations
+
+public Time : nat * nat ==> Time
+Time(startOfSim, endOfSim) ==
+(
+    currentTime := startOfSim;
+    endOfSimulationTime := endOfSim;
+)
+pre startOfSim < endOfSim;
+
+public TimeStep : () ==> ()
+TimeStep() ==
+(
+    currentTime := currentTime + timeStep;
+);
+    
+
+pure public GetTime : () ==> nat
+GetTime() == 
+    return currentTime;
+
+pure public GetEndOfSimulationTime : () ==> nat
+GetEndOfSimulationTime() ==
+    return endOfSimulationTime;
+
+end Time

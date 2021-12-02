@@ -1,0 +1,56 @@
+class Employee is subclass of Global
+
+instance variables
+
+public id: ID;
+private profession: Profession;
+public assignedShifts: set of Timeslot := {}
+
+operations
+
+public Employee : ID * Profession ==> Employee
+Employee(empId, prof) == 
+(
+    id := empId;
+    profession := prof;
+);
+
+public SendNotification: Shift ==> ()
+SendNotification(shift) ==
+(
+    IO`print("\nEmployee ");
+    IO`print(id);
+    IO`print(" remember shift ");
+    IO`print(shift.GetId());
+    IO`print(" from ");
+    let mk_(starttime, endtime) = shift.GetTimeslot()
+    in
+    (
+        IO`print(starttime);
+        IO`print(" to ");
+        IO`print(endtime);
+        IO`print("\n")
+    )     
+)
+pre shift.GetTimeslot() <> nil;
+
+
+pure public GetId : () ==> ID
+GetId() == 
+    return id;
+
+pure public GetProfession : () ==> Profession
+GetProfession() == 
+    return profession;
+
+public AddTimeslot : Timeslot ==> ()
+AddTimeslot(slot) == 
+(
+    assignedShifts := assignedShifts union {slot}
+);
+
+pure public GetAssignedShifts : () ==> set of Timeslot
+GetAssignedShifts() == 
+    return assignedShifts
+
+end Employee

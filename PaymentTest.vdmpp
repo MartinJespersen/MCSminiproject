@@ -1,0 +1,32 @@
+class PaymentTest is subclass of TestCase, Global
+
+types
+Input ::
+    from:  nat
+    until: nat 
+    expectedResult: nat
+
+operations 
+protected runTest : () ==> ()
+runTest() ==
+(PaymentOverPeriod());
+
+
+protected PaymentOverPeriod: () ==> ()
+PaymentOverPeriod() ==
+(
+    dcl listOfInput: seq of Input := [mk_Input(25, 35, 5), mk_Input(35, 45, 5), mk_Input(25, 45, 10)];
+    for input in listOfInput 
+    do
+    (
+        dcl payment: Payment := new Payment();
+        dcl employee: Employee := new Employee("1234", <SoftwareEngineer>);
+        dcl timeslot: Timeslot := mk_(30, 40);
+        employee.AddTimeslot(timeslot);
+        let result = payment.PaymentOverPeriod(employee, input.from, input.until)
+        in 
+            assertTrue(input.expectedResult * payment.paymentPrHour(<SoftwareEngineer>) = result);
+    )
+);
+
+end PaymentTest

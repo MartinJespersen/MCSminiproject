@@ -1,0 +1,153 @@
+class DutyRosterControllerTest is subclass of TestCase, Global
+
+instance variables
+
+private dutyRosterController: DutyRosterController := new DutyRosterController();
+private notificationManager: NotificationManager;
+
+operations
+
+public DutyRosterControllerTest: () ==> DutyRosterControllerTest
+DutyRosterControllerTest() ==
+(
+    dcl time: Time := new Time(0, 5);
+    notificationManager := new NotificationManager(time);
+    dutyRosterController := new DutyRosterController(notificationManager, new Payment());
+
+);
+
+protected runTest : () ==> ()
+runTest() ==
+(IsTimeslotPossibleTest1(); 
+IsTimeslotPossibleTest2();
+IsTimeslotPossibleTest3();
+CreateNotificationTest(); 
+GetAvailableTimeslotsMatchingExpertiseTest();
+GetAvailableTimeslotsMatchingExpertiseTest2();
+GetAvailableTimeslotsMatchingExpertiseTest3());
+
+
+protected IsTimeslotPossibleTest1: () ==> ()
+IsTimeslotPossibleTest1() ==
+(
+	dcl timeslot: Timeslot := mk_(50, 60);
+    dcl timeslots: set of Timeslot := {mk_(60, 70), mk_(40, 50)};
+    assertTrue(dutyRosterController.IsTimeslotPossible(timeslot, timeslots));
+);
+
+protected IsTimeslotPossibleTest2: () ==> ()
+IsTimeslotPossibleTest2() ==
+(
+	dcl timeslot: Timeslot := mk_(45, 55);
+    dcl timeslots: set of Timeslot := {mk_(60, 70), mk_(40, 50)};
+    assertFalse(dutyRosterController.IsTimeslotPossible(timeslot, timeslots));
+);
+
+protected IsTimeslotPossibleTest3: () ==> ()
+IsTimeslotPossibleTest3() ==
+(
+	dcl timeslot: Timeslot := mk_(55, 65);
+    dcl timeslots: set of Timeslot := {mk_(60, 70), mk_(40, 50)};
+    assertFalse(dutyRosterController.IsTimeslotPossible(timeslot, timeslots));
+);
+
+protected CreateNotificationTest: () ==> ()
+CreateNotificationTest() ==
+(
+    dcl notificationTimeBeforeShift: nat := 10;
+    dcl timeslot: Timeslot := mk_(30, 40);
+    dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    dcl employee : Employee := new Employee("1234", <SoftwareEngineer>);
+
+    dutyRosterController.AddEmployeeToDutyRoster(employee);
+    dutyRosterController.AddShiftToDutyRoster(timeslot, shift);
+    dutyRosterController.AddEmployeeToShift(employee, shift);
+    dutyRosterController.CreateNotification(shift, employee, notificationTimeBeforeShift);
+
+    let notificationPrTimePeriod = notificationManager.GetNotificationsPrTimePeriod(),
+        notificationTimes = notificationManager.GetNotificationTimes(),
+        expectedNotificationTime = timeslot.#1 - notificationTimeBeforeShift
+            in
+            (
+                assertTrue(expectedNotificationTime in set dom(notificationPrTimePeriod));
+                assertTrue(expectedNotificationTime = notificationTimes(1));
+            )
+
+
+);
+
+public GetAvailableTimeslotsMatchingExpertiseTest: () ==> ()
+GetAvailableTimeslotsMatchingExpertiseTest() ==
+( 
+    dcl employee : Employee := new Employee("1234", <SoftwareEngineer>);
+    dcl employee2 : Employee := new Employee("5678", <SoftwareEngineer>);
+
+    dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 1, <Salesman> |-> 1});
+    dcl shift2 : Shift := new Shift("3453",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    dcl timeslot : Global`Timeslot := mk_(30, 36);
+    dcl timeslot2 : Global`Timeslot := mk_(50, 58);
+    dcl time: Time := new Time(40, 70);
+    dcl notificationManager : NotificationManager := new NotificationManager(time);
+    dcl ctrl : DutyRosterController := new DutyRosterController(notificationManager, new Payment());
+
+    ctrl.AddEmployeeToDutyRoster(employee);
+    ctrl.AddEmployeeToDutyRoster(employee2);
+
+    ctrl.AddShiftToDutyRoster(timeslot, shift);
+    ctrl.AddShiftToDutyRoster(timeslot2, shift2);
+    let t = ctrl.GetAvailableTimeslotsMatchingExpertise(employee) in
+    assertTrue(t = {timeslot2})
+);
+
+
+public GetAvailableTimeslotsMatchingExpertiseTest2: () ==> ()
+GetAvailableTimeslotsMatchingExpertiseTest2() ==
+( 
+    dcl employee : Employee := new Employee("1234", <SoftwareEngineer>);
+    dcl employee2 : Employee := new Employee("5678", <SoftwareEngineer>);
+
+    dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 1, <Salesman> |-> 1});
+    dcl shift2 : Shift := new Shift("3453",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    dcl timeslot : Global`Timeslot := mk_(30, 36);
+    dcl timeslot2 : Global`Timeslot := mk_(50, 58);
+    dcl time: Time := new Time(40, 70);
+    dcl notificationManager : NotificationManager := new NotificationManager(time);
+    dcl ctrl : DutyRosterController := new DutyRosterController(notificationManager, new Payment());
+
+    ctrl.AddEmployeeToDutyRoster(employee);
+    ctrl.AddEmployeeToDutyRoster(employee2);
+
+    ctrl.AddShiftToDutyRoster(timeslot, shift2);
+    ctrl.AddShiftToDutyRoster(timeslot2, shift);
+
+    ctrl.AddEmployeeToShift(employee2, shift);
+    let t = ctrl.GetAvailableTimeslotsMatchingExpertise(employee) in
+    assertTrue(t = {})
+);
+
+public GetAvailableTimeslotsMatchingExpertiseTest3: () ==> ()
+GetAvailableTimeslotsMatchingExpertiseTest3() ==
+( 
+    dcl employee : Employee := new Employee("1234", <SoftwareEngineer>);
+    dcl employee2 : Employee := new Employee("5678", <SoftwareEngineer>);
+
+    dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 1, <Salesman> |-> 1});
+    dcl shift2 : Shift := new Shift("3453",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    dcl timeslot : Global`Timeslot := mk_(30, 36);
+    dcl timeslot2 : Global`Timeslot := mk_(50, 58);
+    dcl time: Time := new Time(40, 70);
+    dcl notificationManager : NotificationManager := new NotificationManager(time);
+    dcl ctrl : DutyRosterController := new DutyRosterController(notificationManager, new Payment());
+
+    ctrl.AddEmployeeToDutyRoster(employee);
+    ctrl.AddEmployeeToDutyRoster(employee2);
+
+    ctrl.AddShiftToDutyRoster(timeslot, shift);
+    ctrl.AddShiftToDutyRoster(timeslot2, shift2);
+
+    ctrl.AddEmployeeToShift(employee, shift2);
+    let t = ctrl.GetAvailableTimeslotsMatchingExpertise(employee) in
+    assertTrue(t = {})
+);
+
+end DutyRosterControllerTest

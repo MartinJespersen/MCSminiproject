@@ -1,0 +1,17 @@
+class DutyRosterTest is subclass of TestCase
+
+operations
+public Execute : () ==> ()
+Execute() ==
+	let ts : TestSuite = new TestSuite(),
+	Testresult = new TestResult()
+	in
+	(ts.addTest(new EmployeeTest());
+	ts.addTest(new ShiftTest());
+	ts.addTest(new NotificationManagerTest());
+	ts.addTest(new PaymentTest());
+	ts.addTest(new DutyRosterControllerTest());
+	ts.run(Testresult);
+	IO`println(Testresult.toString()););
+
+end DutyRosterTest

@@ -1,0 +1,100 @@
+@startuml
+'skinparam classAttributeIconSize 0
+
+class Time{
+    -currentTime: nat
+    -timestep: nat
+    -endOfSimulationTime: nat
+    +TimeStep()
+    +GetTime(): nat
+    +GetEndOfSimulationTime(): nat
+}
+
+class World{
+    +Run()
+}
+
+class Global{
+
+}
+class DutyRosterController{
+    -dutyRoster: map Timeslot to Shift
+    -employees: set of Employee
+    -notificationManager: NotificationManager
+    -time: Time:
+    -payment: Payment
+    +AddEmployeeToDutyRoster(Employee)
+    +AddShiftToDutyRoster(Timeslot, Shift)
+    +AddEmployeeToShift(Employee, Shift)
+    +GetAvailableTimeslotsMatchingExpertise(Employee): set of Timeslot
+    +GetAssignedTimeslots(Employee): set of Timeslot
+    +CreateNotification(Shift, Employee)
+    +PaymentOverPeriod(Employee, nat, nat)
+    -IsShiftInTheFuture(Shift): bool
+    -IsEmployeePartOfDutyRoster(Employee, set of Employee): bool
+    -IsShiftPartOfDutyRoster(Shift, set of Shift): bool
+    -IsEmployeePartOfShift(Shift, Employee): bool
+    -IsTimeslotPossible(Timeslot, set of Timeslot): bool
+}
+
+class Employee{
+    -id: String
+    -profession: Profession
+    -assignedGuards: set of Timeslot 
+    +GetAssignedShifts(): set of Timeslot
+    +SendNotification(Shift)
+    +GetId(): ID
+    +GetProfession(): Profession
+    +addTimeslot(Timeslot)    
+}
+
+class Shift{
+    -id: ID
+    -requiredProfessions: map Profession to nat
+    -professionsCurrentlyAssigned: map Profession to nat
+    -employeesOnDuty: Employee[]
+    -timeslot: [Timeslot]
+    +AddEmployeeToShift(Employee)
+    +GetAvailableSlots(Profession): nat
+    +AddTimeslot(Timeslot)
+    +getTimeslot(): [Timeslot]
+    +IsShiftVacant(Profession): bool
+    +GetRequiredProfessions(): map Profession to nat
+    +GetProfessionsCurrentlyAssigned(): map Profession to nat
+    +GetId(): ID
+    +GetEmployeesOnDuty(): set of Employee
+}
+
+class Payment{
+    -paymentPrHour: map Profession to nat
+    +PaymentOverPeriod(Employee, nat, nat): nat
+    +CalculatePaymentOverPeriod(set of Timeslot * Profession * nat * nat): nat
+}
+
+class NotificationManager{
+    -notificationTimes: seq of nat
+    -notificationPrTimePeriod(map nat to set of Notification)
+    -time: Time
+    +AddNotification(Shift, Employee, nat)
+    +GetNotificationsPrTimePeriod(): map nat to set of Notification
+    +GetNotificationTimes(): seq of nat
+    +GetTime(): Time
+    +Run()
+    -SendNotifications(set of Notification)
+}
+
+
+Shift "*" <-left- "1" DutyRosterController
+Time "1" --o "1" DutyRosterController
+Payment "1" -up-o "1" DutyRosterController
+Employee "*" <-up- "1" DutyRosterController
+NotificationManager "1" --o "1" DutyRosterController
+
+Time "1" <-up- "1" World
+DutyRosterController <-up- World
+
+Time "1" --o "1" NotificationManager
+Employee "*" <-- "1" NotificationManager
+Shift "*" <-up- "1" NotificationManager
+
+@enduml

@@ -1,0 +1,28 @@
+class Payment is subclass of Global
+
+values
+public paymentPrHour: map Profession to nat = {<Salesman> |-> 100, <SoftwareEngineer> |-> 200, <Lawyer> |-> 150, <Accountant> |-> 90};
+
+operations
+public PaymentOverPeriod: Employee *  nat * nat ==> nat
+PaymentOverPeriod(emp, from, until) ==
+    let timeslotsInTimeInterval = {shift | shift in set emp.GetAssignedShifts() & 
+        let mk_(startTime, endTime) = shift in from < endTime and until > startTime} 
+    in
+        CalculatePaymentOverPeriod(timeslotsInTimeInterval, emp.GetProfession(), from, until);
+
+functions
+private CalculatePaymentOverPeriod: set of Timeslot * Profession * nat * nat -> nat
+CalculatePaymentOverPeriod(s, profession, from, until) ==
+    if s = {}
+        then 0
+    else let timeslot in set s
+        in
+            let mk_(startTime, endTime) = timeslot,
+                i = if from > startTime then from else startTime,
+                j = if until < endTime then until else endTime in 
+            (j - i) * paymentPrHour(profession)  + CalculatePaymentOverPeriod(s\{timeslot}, profession, from, until)
+pre profession in set dom paymentPrHour 
+measure card s;
+
+end Payment

@@ -1,0 +1,82 @@
+class NotificationManager is subclass of Global
+
+instance variables
+private notificationTimes: seq of nat := [];
+private notificationPrTimePeriod: map nat to set of Notification := {|->};
+private time: Time;
+inv card (elems notificationTimes) = len notificationTimes and elems notificationTimes = dom(notificationPrTimePeriod)
+
+operations
+
+public NotificationManager: Time ==> NotificationManager
+NotificationManager(timeObject) ==
+(
+    time := timeObject
+);
+
+public AddNotification: Shift * Employee * nat ==> ()
+AddNotification(shift, emp, newTime) ==
+(
+    dcl notificationTimesWithNewTime: seq of nat := [t | t in set (elems notificationTimes union {newTime})];
+    if newTime not in set dom(notificationPrTimePeriod) 
+    then 
+        atomic(
+            notificationPrTimePeriod := notificationPrTimePeriod ++ {newTime |-> {mk_(shift, emp)}};
+            notificationTimes := notificationTimesWithNewTime
+        )
+    else
+        atomic(
+            notificationPrTimePeriod(newTime) := notificationPrTimePeriod(newTime) union {mk_(shift, emp)};
+            notificationTimes := notificationTimesWithNewTime
+        )
+
+);
+
+
+private SendNotifications: set of Notification ==> ()
+SendNotifications(s) == 
+if s <> {}
+    then
+        let e in set s
+            in
+            let mk_(shift, emp) = e 
+                in
+                (
+                    emp.SendNotification(shift);
+                    SendNotifications(s\{e});
+                );
+--missing measure clause
+
+pure public GetNotificationsPrTimePeriod: () ==> map nat to set of Notification 
+GetNotificationsPrTimePeriod() ==
+    return notificationPrTimePeriod;
+
+pure public GetNotificationTimes: () ==> seq of nat
+GetNotificationTimes() ==
+    return notificationTimes;
+
+pure public GetTime: () ==> Time
+GetTime() ==
+    return time;
+
+public Run: () ==> ()
+Run() ==
+(   
+    while time.GetTime() < time.GetEndOfSimulationTime()
+    do 
+    (
+        IO`print("time step hour "); IO`print(time.GetTime());IO`print("\n");
+        while(notificationTimes <> [] and hd notificationTimes <= time.GetTime()) do
+        (
+            SendNotifications(notificationPrTimePeriod(hd notificationTimes));
+            atomic(
+                notificationPrTimePeriod := {hd notificationTimes} <-: notificationPrTimePeriod;
+                notificationTimes := tl notificationTimes
+            )
+        );
+        time.TimeStep();
+    )
+
+)
+
+end NotificationManager

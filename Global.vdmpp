@@ -1,0 +1,16 @@
+class Global 
+
+types
+
+public Profession = <Salesman> | <SoftwareEngineer> | <Lawyer> | <Accountant>;
+public ID = seq of char
+inv id == len id = 4;
+public Notification = Shift * Employee;
+public Timeslot = nat * nat
+inv timeslotPat == let mk_(startTime, endTime) = timeslotPat 
+                    in startTime < endTime and 
+                        endTime - startTime <= 10
+                                                        ;
+
+ 
+end Global
