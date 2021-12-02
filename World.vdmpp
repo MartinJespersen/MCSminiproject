@@ -28,6 +28,10 @@ Run() ==
     ctrl.CreateNotification(shift, employee, 20);
     ctrl.CreateNotification(shift, employee2, 0);
     ctrl.CreateNotification(shift2, employee3, 10);
+    ctrl.CreateNotification(shift, employee, 0);
+    ctrl.DeleteNotifications(shift2, employee3);
+    ctrl.DeleteEmployeeFromDutyRoster(employee3);
+    
 
     IO`println("Get Time slots matching employee before simulation");
     IO`println(ctrl.GetAvailableTimeslotsMatchingExpertise(employee));
@@ -38,7 +42,6 @@ Run() ==
     IO`println("Salary for employee2:");
     IO`println(ctrl.PaymentOverPeriod(employee2, 0, 70));
     IO`println("Salary for employee3:");
-    IO`println(ctrl.PaymentOverPeriod(employee3, 0, 70));
     IO`println("Get Time slots matching employee after simulation");
     IO`println(ctrl.GetAvailableTimeslotsMatchingExpertise(employee));
     IO`println("The time slots employee is assigned to:");

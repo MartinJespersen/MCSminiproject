@@ -14,6 +14,17 @@ NotificationManager(timeObject) ==
     time := timeObject
 );
 
+public DeleteNotification: Shift * Employee ==> ()
+DeleteNotification(shift, emp) ==
+    for all notificationIndex in set dom(notificationPrTimePeriod) do
+    (
+        notificationPrTimePeriod(notificationIndex) := notificationPrTimePeriod(notificationIndex) \ {mk_(shift, emp)};
+        if notificationPrTimePeriod(notificationIndex) = {}
+        then 
+            RemoveEmptyNotificationTimes();
+
+    );
+
 public AddNotification: Shift * Employee * nat ==> ()
 AddNotification(shift, emp, newTime) ==
 (
@@ -32,6 +43,41 @@ AddNotification(shift, emp, newTime) ==
 
 );
 
+public DeleteNotificationsForEmployee : Employee ==> () 
+DeleteNotificationsForEmployee(employee) == 
+(
+    for all notificationIndex in set dom(notificationPrTimePeriod) do
+    (
+        notificationPrTimePeriod(notificationIndex) := 
+            notificationPrTimePeriod(notificationIndex) \ {notification | notification in set notificationPrTimePeriod(notificationIndex) & 
+                                                                                let mk_(-, emp) = notification in emp = employee};
+        if notificationPrTimePeriod(notificationIndex) = {}
+        then 
+            RemoveEmptyNotificationTimes();
+
+    );
+);
+
+public DeleteNotificationsForShift : Shift ==> () 
+DeleteNotificationsForShift(shift) == 
+(
+    for all notificationIndex in set dom(notificationPrTimePeriod) do
+    (
+        notificationPrTimePeriod(notificationIndex) := 
+            notificationPrTimePeriod(notificationIndex) \ {notification | notification in set notificationPrTimePeriod(notificationIndex) & 
+                                                                                let mk_(s, -) = notification in s = shift};
+        if notificationPrTimePeriod(notificationIndex) = {}
+        then 
+            RemoveEmptyNotificationTimes();
+
+    );
+);
+
+private RemoveEmptyNotificationTimes: () ==> ()
+RemoveEmptyNotificationTimes() ==
+    atomic(
+            notificationTimes := [t | t in set elems(notificationTimes) & notificationPrTimePeriod(t) <> {}];
+            notificationPrTimePeriod := {t | t in set dom(notificationPrTimePeriod) & notificationPrTimePeriod(t) = {} } <-: notificationPrTimePeriod;);
 
 private SendNotifications: set of Notification ==> ()
 SendNotifications(s) == 

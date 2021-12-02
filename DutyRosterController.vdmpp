@@ -14,6 +14,7 @@ operations
 public DutyRosterController : NotificationManager * Payment ==> DutyRosterController
 DutyRosterController(notifyMan, p) ==
 (
+
     notificationManager := notifyMan;
     time := notificationManager.GetTime();
     payment := p;
@@ -40,15 +41,39 @@ AddShiftToDutyRoster(timeslot,shift) ==
     dutyRoster := dutyRoster munion {timeslot |-> shift};
     shift.AddTimeslot(timeslot);
 )
-pre shift.GetTimeslot() = nil and
+pre shift.GetEmployeesOnDuty() = {} and
+    shift.GetTimeslot() = nil and
     not (IsShiftPartOfDutyRoster(shift, rng(dutyRoster))) and
     IsTimeslotPossible(timeslot, dom(dutyRoster))
 post shift.GetTimeslot() <> nil;
 
+public DeleteShiftFromDutyRoster: Shift ==> ()
+DeleteShiftFromDutyRoster(shift) ==
+(
+    for all emp in set employees do
+        emp.RemoveTimeslot((inverse dutyRoster)(shift));
+    dutyRoster := dutyRoster :-> {shift}; 
+    notificationManager.DeleteNotificationsForShift(shift);
+    shift.RemoveFromDutyRoster();
+) 
+pre IsShiftPartOfDutyRoster(shift, rng(dutyRoster));
+
 public AddEmployeeToDutyRoster : Employee ==> ()
 AddEmployeeToDutyRoster(emp) ==
     employees := employees union {emp}
-pre not IsEmployeePartOfDutyRoster(emp, employees);
+pre not IsEmployeePartOfDutyRoster(emp, employees) and
+    emp.GetAssignedShifts() = {};
+
+public DeleteEmployeeFromDutyRoster: Employee ==> ()
+DeleteEmployeeFromDutyRoster(emp) == 
+(
+    employees := employees \ {emp};
+    for all shift in set rng(dutyRoster) do
+        shift.DeleteEmployeeFromShift(emp);
+    notificationManager.DeleteNotificationsForEmployee(emp);
+    emp.RemoveFromDutyRoster();
+)
+pre IsEmployeePartOfDutyRoster(emp, employees);
 
 public GetAvailableTimeslotsMatchingExpertise : Employee ==> set of Timeslot
 GetAvailableTimeslotsMatchingExpertise(emp) ==
@@ -71,9 +96,14 @@ public CreateNotification : Shift * Employee * nat ==> ()
 CreateNotification(shift, emp, notificationTime) ==
     let mk_(startTime, -) = (inverse dutyRoster)(shift) in
         notificationManager.AddNotification(shift, emp, startTime - notificationTime)
-pre IsEmployeePartOfShift(shift, emp) and
+pre IsShiftPartOfDutyRoster(shift, rng(dutyRoster)) and
+    IsEmployeePartOfShift(shift, emp) and
     IsShiftInTheFuture(shift);
 
+public DeleteNotifications : Shift * Employee ==> ()
+DeleteNotifications(shift, emp) ==
+    notificationManager.DeleteNotification(shift, emp)
+pre IsEmployeePartOfShift(shift, emp);
 
 pure private IsShiftInTheFuture : Shift ==> bool
 IsShiftInTheFuture(shift) ==

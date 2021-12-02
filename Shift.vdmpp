@@ -27,6 +27,10 @@ Shift(shiftId, reqProf) ==
 ) 
 pre dom(reqProf) <> {} and forall i in set rng reqProf & i <> 0;
 
+public DeleteEmployeeFromShift: Employee ==> ()
+DeleteEmployeeFromShift(emp) ==
+    employeesOnDuty := employeesOnDuty \ {emp};
+
 public AddEmployeeToShift : Employee ==> ()
 AddEmployeeToShift(employee) ==
 (
@@ -38,7 +42,12 @@ AddEmployeeToShift(employee) ==
 pre forall emp in set employeesOnDuty & employee.GetId() <> emp.GetId() and 
 employee.GetProfession() in set dom professionsCurrentlyAssigned;
 
-
+public RemoveFromDutyRoster : () ==> ()
+RemoveFromDutyRoster() == 
+(
+    employeesOnDuty := {};
+    timeslot := nil;
+);
 
 
 pure public GetAvailableSlots: Profession ==> nat 
