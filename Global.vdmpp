@@ -5,7 +5,7 @@ types
 public Profession = <Salesman> | <SoftwareEngineer> | <Lawyer> | <Accountant>;
 public ID = seq of char
 inv id == len id = 4;
-public Notification = Shift * Employee;
+public Notification = Shift * Employee * Timeslot;
 public Timeslot = nat * nat
 inv timeslotPat == let mk_(startTime, endTime) = timeslotPat 
                     in startTime < endTime and 

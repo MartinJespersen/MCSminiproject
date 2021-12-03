@@ -15,15 +15,15 @@ Employee(empId, prof) ==
     profession := prof;
 );
 
-public SendNotification: Shift ==> ()
-SendNotification(shift) ==
+public SendNotification: Shift * Timeslot ==> ()
+SendNotification(shift, t) ==
 (
     IO`print("\nEmployee ");
     IO`print(id);
     IO`print(" remember shift ");
     IO`print(shift.GetId());
     IO`print(" from ");
-    let mk_(starttime, endtime) = shift.GetTimeslot()
+    let mk_(starttime, endtime) = t
     in
     (
         IO`print(starttime);
@@ -31,8 +31,7 @@ SendNotification(shift) ==
         IO`print(endtime);
         IO`print("\n")
     )     
-)
-pre shift.GetTimeslot() <> nil;
+);
 
 
 pure public GetId : () ==> ID
@@ -43,7 +42,7 @@ pure public GetProfession : () ==> Profession
 GetProfession() == 
     return profession;
 
-public AddTimeslot : Timeslot ==> ()
+/*public AddTimeslot : Timeslot ==> ()
 AddTimeslot(slot) == 
 (
     assignedShifts := assignedShifts union {slot}
@@ -61,5 +60,5 @@ RemoveTimeslot(timeslot) ==
 pure public GetAssignedShifts : () ==> set of Timeslot
 GetAssignedShifts() == 
     return assignedShifts
-
+*/
 end Employee

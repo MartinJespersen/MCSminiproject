@@ -6,15 +6,19 @@ private employees: set of Employee := {};
 private notificationManager: NotificationManager;
 private time: Time;
 private payment : Payment;
+private employeesAssignedToShift: map Shift to set of Employee := {|->};
+private shiftsEmployeeIsAssignedTo: map Employee to set of Shift := {|->};
 
-inv forall emp in set employees & emp.GetAssignedShifts() subset dom(dutyRoster);
+inv dom(employeesAssignedToShift) subset rng(dutyRoster) and 
+    dom(shiftsEmployeeIsAssignedTo) subset employees and
+    dunion rng(employeesAssignedToShift) = dom(shiftsEmployeeIsAssignedTo) and
+    dunion rng(shiftsEmployeeIsAssignedTo) = dom(employeesAssignedToShift);
 
 operations
 
 public DutyRosterController : NotificationManager * Payment ==> DutyRosterController
 DutyRosterController(notifyMan, p) ==
 (
-
     notificationManager := notifyMan;
     time := notificationManager.GetTime();
     payment := p;
@@ -23,55 +27,70 @@ DutyRosterController(notifyMan, p) ==
 
 public AddEmployeeToShift : Employee * Shift ==> ()
 AddEmployeeToShift(employee, shift) ==
-    let timeslot = shift.GetTimeslot()
-        in
-        (
-            shift.AddEmployeeToShift(employee);
-            employee.AddTimeslot(timeslot);
-        )
-pre shift.GetTimeslot() <> nil and
-    IsEmployeePartOfDutyRoster(employee, employees) and 
-    IsShiftPartOfDutyRoster(shift, rng(dutyRoster))
-post employee in set shift.GetEmployeesOnDuty() and
-    shift.GetTimeslot() in set employee.GetAssignedShifts();
+(
+    dcl employeesAssignedToShiftTemp : set of Employee := {};
+    dcl shiftsEmployeeIsAssignedToTemp : set of Shift := {};
+    if shift in set dom(employeesAssignedToShift)
+    then 
+        employeesAssignedToShiftTemp := employeesAssignedToShift(shift) union {employee};
+    if(employee in set dom(shiftsEmployeeIsAssignedTo)) 
+    then 
+        shiftsEmployeeIsAssignedToTemp := shiftsEmployeeIsAssignedTo(employee) union {shift};
+    atomic(
+        employeesAssignedToShift := 
+            employeesAssignedToShift ++ {shift |-> employeesAssignedToShiftTemp};
+        shiftsEmployeeIsAssignedTo := 
+            shiftsEmployeeIsAssignedTo ++ {employee |-> shiftsEmployeeIsAssignedToTemp}
+    )
+)
+pre IsEmployeePartOfDutyRoster(employee, employees) and 
+    IsShiftPartOfDutyRoster(shift, rng(dutyRoster)) and
+    IsEmployeePartOfShift(employee, employeesAssignedToShift(shift))
+post employee in set employeesAssignedToShift(shift) and 
+    shift in set shiftsEmployeeIsAssignedTo(employee);
 
 public AddShiftToDutyRoster : Timeslot * Shift ==> ()
 AddShiftToDutyRoster(timeslot,shift) == 
 (
     dutyRoster := dutyRoster munion {timeslot |-> shift};
-    shift.AddTimeslot(timeslot);
 )
-pre shift.GetEmployeesOnDuty() = {} and
-    shift.GetTimeslot() = nil and
-    not (IsShiftPartOfDutyRoster(shift, rng(dutyRoster))) and
-    IsTimeslotPossible(timeslot, dom(dutyRoster))
-post shift.GetTimeslot() <> nil;
+pre not IsShiftPartOfDutyRoster(shift, rng(dutyRoster)) and
+    IsTimeslotPossible(timeslot, dom(dutyRoster));
 
 public DeleteShiftFromDutyRoster: Shift ==> ()
 DeleteShiftFromDutyRoster(shift) ==
 (
-    for all emp in set employees do
-        emp.RemoveTimeslot((inverse dutyRoster)(shift));
-    dutyRoster := dutyRoster :-> {shift}; 
+    dcl shiftsEmployeeIsAssignedToTemp: map Employee to set of Shift := { |->};
+    for all emp in set dom(shiftsEmployeeIsAssignedTo) do
+        shiftsEmployeeIsAssignedToTemp := shiftsEmployeeIsAssignedToTemp munion {emp |-> shiftsEmployeeIsAssignedTo(emp) \ {shift}};
+    atomic(
+        dutyRoster := dutyRoster :-> {shift};
+        employeesAssignedToShift := {shift} <-: employeesAssignedToShift;
+        shiftsEmployeeIsAssignedTo := shiftsEmployeeIsAssignedToTemp;
+    );
     notificationManager.DeleteNotificationsForShift(shift);
-    shift.RemoveFromDutyRoster();
+
 ) 
 pre IsShiftPartOfDutyRoster(shift, rng(dutyRoster));
 
 public AddEmployeeToDutyRoster : Employee ==> ()
 AddEmployeeToDutyRoster(emp) ==
     employees := employees union {emp}
-pre not IsEmployeePartOfDutyRoster(emp, employees) and
-    emp.GetAssignedShifts() = {};
+pre not IsEmployeePartOfDutyRoster(emp, employees);
 
 public DeleteEmployeeFromDutyRoster: Employee ==> ()
 DeleteEmployeeFromDutyRoster(emp) == 
 (
-    employees := employees \ {emp};
-    for all shift in set rng(dutyRoster) do
-        shift.DeleteEmployeeFromShift(emp);
+    dcl employeesAssignedToShiftTemp: map Shift to set of Employee := {|->};
+    for all s in set dom(employeesAssignedToShift) do
+        employeesAssignedToShiftTemp := 
+            employeesAssignedToShiftTemp munion {s |-> employeesAssignedToShift(s) \ {emp}};
+    atomic(
+        employees := employees \ {emp};
+        shiftsEmployeeIsAssignedTo := {emp} <-: shiftsEmployeeIsAssignedTo;
+        employeesAssignedToShift := employeesAssignedToShiftTemp;
+    );
     notificationManager.DeleteNotificationsForEmployee(emp);
-    emp.RemoveFromDutyRoster();
 )
 pre IsEmployeePartOfDutyRoster(emp, employees);
 
@@ -83,27 +102,29 @@ GetAvailableTimeslotsMatchingExpertise(emp) ==
             let shift = dutyRoster(t),
                 mk_(startTime,-) = t 
                 in
-                    shift.IsShiftVacant(prof) and startTime >= time.GetTime() and emp not in set shift.GetEmployeesOnDuty()}
+                    shift.IsShiftVacant(prof) and 
+                    startTime >= time.GetTime() and 
+                    emp not in set employeesAssignedToShift(shift)}
 post RESULT subset dom(dutyRoster);
 
 public GetAssignedTimeslots : Employee ==> set of Timeslot
 GetAssignedTimeslots(emp) ==
-    return emp.GetAssignedShifts()
+    return {t | t in set dom dutyRoster & dutyRoster(t) in set shiftsEmployeeIsAssignedTo(emp)}
 pre IsEmployeePartOfDutyRoster(emp, employees)
-post RESULT subset dom(dutyRoster);
+post RESULT subset dom dutyRoster;
 
 public CreateNotification : Shift * Employee * nat ==> ()
 CreateNotification(shift, emp, notificationTime) ==
     let mk_(startTime, -) = (inverse dutyRoster)(shift) in
         notificationManager.AddNotification(shift, emp, startTime - notificationTime)
 pre IsShiftPartOfDutyRoster(shift, rng(dutyRoster)) and
-    IsEmployeePartOfShift(shift, emp) and
+    IsEmployeePartOfShift(emp, employeesAssignedToShift(shift)) and
     IsShiftInTheFuture(shift);
 
 public DeleteNotifications : Shift * Employee ==> ()
 DeleteNotifications(shift, emp) ==
     notificationManager.DeleteNotification(shift, emp)
-pre IsEmployeePartOfShift(shift, emp);
+pre IsEmployeePartOfShift(emp, employeesAssignedToShift(shift));
 
 pure private IsShiftInTheFuture : Shift ==> bool
 IsShiftInTheFuture(shift) ==
@@ -118,9 +139,9 @@ pre from < until and
 
 functions
 
-private IsEmployeePartOfShift: Shift * Employee -> bool
-IsEmployeePartOfShift(shift, emp) ==
-    emp in set shift.GetEmployeesOnDuty();
+private IsEmployeePartOfShift: Employee * set of Employee -> bool
+IsEmployeePartOfShift(emp, employees) ==
+    emp in set employees;
 
 private IsEmployeePartOfDutyRoster : Employee * set of Employee -> bool
 IsEmployeePartOfDutyRoster(emp, allEmp) == 
