@@ -32,7 +32,7 @@ AddNotification(shift, emp, newTime) ==
     if newTime not in set dom(notificationPrTimePeriod) 
     then 
         atomic(
-            notificationPrTimePeriod := notificationPrTimePeriod ++ {newTime |-> {mk_(shift, emp)}};
+            notificationPrTimePeriod := notificationPrTimePeriod ++ {newTime |-> {mk_(shift, emp, new)}};
             notificationTimes := notificationTimesWithNewTime
         )
     else
@@ -50,7 +50,7 @@ DeleteNotificationsForEmployee(employee) ==
     (
         notificationPrTimePeriod(notificationIndex) := 
             notificationPrTimePeriod(notificationIndex) \ {notification | notification in set notificationPrTimePeriod(notificationIndex) & 
-                                                                                let mk_(-, emp) = notification in emp = employee};
+                                                                                let mk_(-, emp, -) = notification in emp = employee};
         if notificationPrTimePeriod(notificationIndex) = {}
         then 
             RemoveEmptyNotificationTimes();
@@ -65,7 +65,7 @@ DeleteNotificationsForShift(shift) ==
     (
         notificationPrTimePeriod(notificationIndex) := 
             notificationPrTimePeriod(notificationIndex) \ {notification | notification in set notificationPrTimePeriod(notificationIndex) & 
-                                                                                let mk_(s, -) = notification in s = shift};
+                                                                                let mk_(s, -, -) = notification in s = shift};
         if notificationPrTimePeriod(notificationIndex) = {}
         then 
             RemoveEmptyNotificationTimes();
@@ -76,8 +76,10 @@ DeleteNotificationsForShift(shift) ==
 private RemoveEmptyNotificationTimes: () ==> ()
 RemoveEmptyNotificationTimes() ==
     atomic(
-            notificationTimes := [t | t in set elems(notificationTimes) & notificationPrTimePeriod(t) <> {}];
-            notificationPrTimePeriod := {t | t in set dom(notificationPrTimePeriod) & notificationPrTimePeriod(t) = {} } <-: notificationPrTimePeriod;);
+            notificationTimes := [t | t in set elems(notificationTimes) & 
+                notificationPrTimePeriod(t) <> {}];
+            notificationPrTimePeriod := {t | t in set dom(notificationPrTimePeriod) & 
+                notificationPrTimePeriod(t) = {} } <-: notificationPrTimePeriod;);
 
 private SendNotifications: set of Notification ==> ()
 SendNotifications(s) == 
@@ -85,10 +87,10 @@ if s <> {}
     then
         let e in set s
             in
-            let mk_(shift, emp) = e 
+            let mk_(shift, emp, t) = e 
                 in
                 (
-                    emp.SendNotification(shift);
+                    emp.SendNotification(shift, t);
                     SendNotifications(s\{e});
                 );
 --missing measure clause
