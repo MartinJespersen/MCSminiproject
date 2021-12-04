@@ -14,30 +14,30 @@ NotificationManager(timeObject) ==
     time := timeObject
 );
 
-public DeleteNotification: Shift * Employee ==> ()
-DeleteNotification(shift, emp) ==
+public DeleteNotification: Shift * Employee * Timeslot ==> ()
+DeleteNotification(shift, emp, timeslot) ==
     for all notificationIndex in set dom(notificationPrTimePeriod) do
     (
-        notificationPrTimePeriod(notificationIndex) := notificationPrTimePeriod(notificationIndex) \ {mk_(shift, emp)};
+        notificationPrTimePeriod(notificationIndex) := notificationPrTimePeriod(notificationIndex) \ {mk_(shift, emp, timeslot)};
         if notificationPrTimePeriod(notificationIndex) = {}
         then 
             RemoveEmptyNotificationTimes();
 
     );
 
-public AddNotification: Shift * Employee * nat ==> ()
-AddNotification(shift, emp, newTime) ==
+public AddNotification: Shift * Employee * Timeslot * nat ==> ()
+AddNotification(shift, emp, timeslot ,newTime) ==
 (
     dcl notificationTimesWithNewTime: seq of nat := [t | t in set (elems notificationTimes union {newTime})];
     if newTime not in set dom(notificationPrTimePeriod) 
     then 
         atomic(
-            notificationPrTimePeriod := notificationPrTimePeriod ++ {newTime |-> {mk_(shift, emp, new)}};
+            notificationPrTimePeriod := notificationPrTimePeriod ++ {newTime |-> {mk_(shift, emp, timeslot)}};
             notificationTimes := notificationTimesWithNewTime
         )
     else
         atomic(
-            notificationPrTimePeriod(newTime) := notificationPrTimePeriod(newTime) union {mk_(shift, emp)};
+            notificationPrTimePeriod(newTime) := notificationPrTimePeriod(newTime) union {mk_(shift, emp, timeslot)};
             notificationTimes := notificationTimesWithNewTime
         )
 
@@ -93,7 +93,7 @@ if s <> {}
                     emp.SendNotification(shift, t);
                     SendNotifications(s\{e});
                 );
---missing measure clause
+
 
 pure public GetNotificationsPrTimePeriod: () ==> map nat to set of Notification 
 GetNotificationsPrTimePeriod() ==

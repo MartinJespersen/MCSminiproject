@@ -4,10 +4,10 @@ values
 public paymentPrHour: map Profession to nat = {<Salesman> |-> 100, <SoftwareEngineer> |-> 200, <Lawyer> |-> 150, <Accountant> |-> 90};
 
 operations
-public PaymentOverPeriod: Employee *  nat * nat ==> nat
-PaymentOverPeriod(emp, from, until) ==
-    let timeslotsInTimeInterval = {shift | shift in set emp.GetAssignedShifts() & 
-        let mk_(startTime, endTime) = shift in from < endTime and until > startTime} 
+public PaymentOverPeriod: Employee * set of Timeslot *  nat * nat ==> nat
+PaymentOverPeriod(emp, timeslots, from, until) ==
+    let timeslotsInTimeInterval = {slot | slot in set timeslots & 
+        let mk_(startTime, endTime) = slot in from < endTime and until > startTime} 
     in
         CalculatePaymentOverPeriod(timeslotsInTimeInterval, emp.GetProfession(), from, until);
 

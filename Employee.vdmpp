@@ -4,7 +4,6 @@ instance variables
 
 public id: ID;
 private profession: Profession;
-public assignedShifts: set of Timeslot := {}
 
 operations
 
@@ -42,23 +41,5 @@ pure public GetProfession : () ==> Profession
 GetProfession() == 
     return profession;
 
-/*public AddTimeslot : Timeslot ==> ()
-AddTimeslot(slot) == 
-(
-    assignedShifts := assignedShifts union {slot}
-); 
 
-public RemoveFromDutyRoster: () ==> ()
-RemoveFromDutyRoster() == 
-    assignedShifts := {};
-
-
-public RemoveTimeslot: Timeslot ==> ()
-RemoveTimeslot(timeslot) ==
-    assignedShifts := assignedShifts \ {timeslot};
-
-pure public GetAssignedShifts : () ==> set of Timeslot
-GetAssignedShifts() == 
-    return assignedShifts
-*/
 end Employee

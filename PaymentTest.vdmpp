@@ -22,8 +22,7 @@ PaymentOverPeriod() ==
         dcl payment: Payment := new Payment();
         dcl employee: Employee := new Employee("1234", <SoftwareEngineer>);
         dcl timeslot: Timeslot := mk_(30, 40);
-        employee.AddTimeslot(timeslot);
-        let result = payment.PaymentOverPeriod(employee, input.from, input.until)
+        let result = payment.PaymentOverPeriod(employee, {timeslot}, input.from, input.until)
         in 
             assertTrue(input.expectedResult * payment.paymentPrHour(<SoftwareEngineer>) = result);
     )
