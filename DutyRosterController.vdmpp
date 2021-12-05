@@ -68,8 +68,8 @@ public DeleteShiftFromDutyRoster: Shift ==> ()
 DeleteShiftFromDutyRoster(shift) ==
 (
     dcl employeeToShiftsTemp: map Employee to set of Shift := { |->};
-    for all emp in set dom(employeeToShifts) do
-        employeeToShiftsTemp := employeeToShiftsTemp munion {emp |-> employeeToShifts(emp) \ {shift}};
+    employeeToShiftsTemp := {emp |-> employeeToShifts(emp) \ {shift} | emp in set dom(employeeToShifts) & 
+        employeeToShifts(emp) \ {shift} <> {}};
     atomic(
         dutyRoster := dutyRoster :-> {shift};
         shiftToEmployees := {shift} <-: shiftToEmployees;
@@ -115,7 +115,8 @@ post RESULT subset dom(dutyRoster);
 
 public GetAssignedTimeslots : Employee ==> set of Timeslot
 GetAssignedTimeslots(emp) ==
-    return {t | t in set dom dutyRoster & dutyRoster(t) in set employeeToShifts(emp)}
+    return {t | t in set dom dutyRoster & dutyRoster(t) in set employeeToShifts(emp)
+                                            and let mk_(-, endTime) = t in endTime > time.GetTime() }
 pre IsEmployeePartOfDutyRoster(emp, employees)
 post RESULT subset dom dutyRoster;
 
@@ -145,6 +146,22 @@ PaymentOverPeriod(emp, from, until) ==
         payment.PaymentOverPeriod(emp, timeslots, from, until)
 pre from < until and 
     IsEmployeePartOfDutyRoster(emp, employees);
+
+pure public GetEmployees: () ==> set of Employee
+GetEmployees() ==
+    return employees;
+
+pure public GetShifts: () ==> set of Shift
+GetShifts() ==
+    return rng dutyRoster;
+
+pure public GetEmployeeToshift: () ==> map Employee to set of Shift 
+GetEmployeeToshift() ==
+    return employeeToShifts;
+
+pure public GetShiftToEmployees: () ==> map Shift to set of Employee 
+GetShiftToEmployees() ==
+    return shiftToEmployees;
 
 functions
 

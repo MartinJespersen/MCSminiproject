@@ -6,6 +6,7 @@ private timeStep : nat = 1;
 instance variables
 private currentTime: nat := 0;
 private endOfSimulationTime: nat;
+inv currentTime <= endOfSimulationTime;
 
 operations
 
@@ -23,7 +24,10 @@ TimeStep() ==
     currentTime := currentTime + timeStep;
 );
     
-
+public SetTime: nat ==> ()
+SetTime(t) ==
+    currentTime := t;
+    
 pure public GetTime : () ==> nat
 GetTime() == 
     return currentTime;
