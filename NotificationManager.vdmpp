@@ -51,11 +51,8 @@ DeleteNotificationsForEmployee(employee) ==
         notificationPrTimePeriod(notificationIndex) := 
             notificationPrTimePeriod(notificationIndex) \ {notification | notification in set notificationPrTimePeriod(notificationIndex) & 
                                                                                 let mk_(-, emp, -) = notification in emp = employee};
-        if notificationPrTimePeriod(notificationIndex) = {}
-        then 
-            RemoveEmptyNotificationTimes();
-
     );
+    RemoveEmptyNotificationTimes();
 );
 
 public DeleteNotificationsForShift : Shift ==> () 
@@ -65,12 +62,9 @@ DeleteNotificationsForShift(shift) ==
     (
         notificationPrTimePeriod(notificationIndex) := 
             notificationPrTimePeriod(notificationIndex) \ {notification | notification in set notificationPrTimePeriod(notificationIndex) & 
-                                                                                let mk_(s, -, -) = notification in s = shift};
-        if notificationPrTimePeriod(notificationIndex) = {}
-        then 
-            RemoveEmptyNotificationTimes();
-
+                                                                                let mk_(s, -, -) = notification in s = shift};     
     );
+    RemoveEmptyNotificationTimes();
 );
 
 private RemoveEmptyNotificationTimes: () ==> ()
@@ -81,8 +75,8 @@ RemoveEmptyNotificationTimes() ==
             notificationPrTimePeriod := {t | t in set dom(notificationPrTimePeriod) & 
                 notificationPrTimePeriod(t) = {} } <-: notificationPrTimePeriod;);
 
-private SendNotifications: set of Notification ==> ()
-SendNotifications(s) == 
+private SendNotifications: set of Notification * nat ==> ()
+SendNotifications(s, notificationTime) == 
 if s <> {}
     then
         let e in set s
@@ -90,8 +84,8 @@ if s <> {}
             let mk_(shift, emp, t) = e 
                 in
                 (
-                    emp.SendNotification(shift, t);
-                    SendNotifications(s\{e});
+                    emp.SendNotification(shift, t, notificationTime);
+                    SendNotifications(s\{e}, notificationTime);
                 );
 
 
@@ -113,10 +107,9 @@ Run() ==
     while time.GetTime() < time.GetEndOfSimulationTime()
     do 
     (
-        IO`print("time step hour "); IO`print(time.GetTime());IO`print("\n");
         while(notificationTimes <> [] and hd notificationTimes <= time.GetTime()) do
         (
-            SendNotifications(notificationPrTimePeriod(hd notificationTimes));
+            SendNotifications(notificationPrTimePeriod(hd notificationTimes), hd notificationTimes);
             atomic(
                 notificationPrTimePeriod := {hd notificationTimes} <-: notificationPrTimePeriod;
                 notificationTimes := tl notificationTimes

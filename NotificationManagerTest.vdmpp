@@ -3,25 +3,54 @@ operations
 
 protected runTest : () ==> ()
 runTest() ==
-(AddNotificationTest());
+(AddAndDeleteNotificationsTest());
 
-protected AddNotificationTest: () ==> ()
-AddNotificationTest() ==
+protected AddAndDeleteNotificationsTest: () ==> ()
+AddAndDeleteNotificationsTest() ==
 (
     dcl notificationTime: nat := 10;
     dcl notificationManager: NotificationManager := new NotificationManager(new Time(0, 50));
 	dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
+    dcl shift2 : Shift := new Shift("5675",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
     dcl employee: Employee := new Employee("1234", <SoftwareEngineer>);
+    dcl employee2: Employee := new Employee("4354", <Salesman>);
     dcl timeslot: Timeslot := mk_(10,20);
 
     notificationManager.AddNotification(shift, employee, timeslot, notificationTime);
+    notificationManager.AddNotification(shift2, employee2, timeslot, notificationTime);
+    notificationManager.AddNotification(shift2, employee, timeslot, notificationTime);
+    
+
     let notificationsPrTimePeriod = notificationManager.GetNotificationsPrTimePeriod(),
         notificationTimes = notificationManager.GetNotificationTimes() 
             in
             (
-                assertTrue(notificationTime in set dom(notificationsPrTimePeriod));
-                assertTrue(mk_(shift, employee, timeslot) in set notificationsPrTimePeriod(notificationTime));
-                assertTrue(notificationTime in set (elems notificationTimes));
+                assertTrue({notificationTime} = dom(notificationsPrTimePeriod));
+                assertTrue({mk_(shift, employee, timeslot), 
+                            mk_(shift2, employee2, timeslot), 
+                            mk_(shift2, employee, timeslot)} = notificationsPrTimePeriod(notificationTime));
+                assertTrue({notificationTime} = (elems notificationTimes));
+            );
+    
+    notificationManager.DeleteNotificationsForShift(shift2);
+
+    let notificationsPrTimePeriod = notificationManager.GetNotificationsPrTimePeriod(),
+        notificationTimes = notificationManager.GetNotificationTimes() 
+            in
+            (
+                assertTrue({notificationTime} = dom(notificationsPrTimePeriod));
+                assertTrue({mk_(shift, employee, timeslot)} = notificationsPrTimePeriod(notificationTime));
+                assertTrue({notificationTime} = (elems notificationTimes));
+            );
+    
+    notificationManager.DeleteNotificationsForEmployee(employee);
+
+    let notificationsPrTimePeriod = notificationManager.GetNotificationsPrTimePeriod(),
+        notificationTimes = notificationManager.GetNotificationTimes() 
+            in
+            (
+                assertTrue({} = dom(notificationsPrTimePeriod));
+                assertTrue({} = (elems notificationTimes));
             )
 )
 end NotificationManagerTest

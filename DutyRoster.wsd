@@ -20,6 +20,8 @@ class Global{
 class DutyRosterController{
     -dutyRoster: map Timeslot to Shift
     -employees: set of Employee
+    -shiftToEmployees: map shift to set of Employee
+    -employeeToShifts: map Employee to set of Shift
     -notificationManager: NotificationManager
     -time: Time:
     -payment: Payment
@@ -28,8 +30,12 @@ class DutyRosterController{
     +AddEmployeeToShift(Employee, Shift)
     +GetAvailableTimeslotsMatchingExpertise(Employee): set of Timeslot
     +GetAssignedTimeslots(Employee): set of Timeslot
-    +CreateNotification(Shift, Employee)
-    +PaymentOverPeriod(Employee, nat, nat)
+    +CreateNotification(Shift, Employee, nat)
+    +DeleteNotifications(Shift, Employee)
+    +PaymentOverPeriod(Employee, nat, nat): nat
+    +DeleteShiftFromDutyRoster(Shift)
+    +DeleteEmployeeFromDutyRoster(Employee)
+    +RemoveEmployeeFromShift(Employee, Shift)
     -IsShiftInTheFuture(Shift): bool
     -IsEmployeePartOfDutyRoster(Employee, set of Employee): bool
     -IsShiftPartOfDutyRoster(Shift, set of Shift): bool
@@ -40,29 +46,19 @@ class DutyRosterController{
 class Employee{
     -id: String
     -profession: Profession
-    -assignedGuards: set of Timeslot 
-    +GetAssignedShifts(): set of Timeslot
-    +SendNotification(Shift)
+    +SendNotification(Shift, Timeslot, nat)
     +GetId(): ID
-    +GetProfession(): Profession
-    +addTimeslot(Timeslot)    
+    +GetProfession(): Profession   
 }
 
 class Shift{
     -id: ID
     -requiredProfessions: map Profession to nat
     -professionsCurrentlyAssigned: map Profession to nat
-    -employeesOnDuty: Employee[]
-    -timeslot: [Timeslot]
     +AddEmployeeToShift(Employee)
     +GetAvailableSlots(Profession): nat
-    +AddTimeslot(Timeslot)
-    +getTimeslot(): [Timeslot]
     +IsShiftVacant(Profession): bool
-    +GetRequiredProfessions(): map Profession to nat
-    +GetProfessionsCurrentlyAssigned(): map Profession to nat
     +GetId(): ID
-    +GetEmployeesOnDuty(): set of Employee
 }
 
 class Payment{
@@ -76,11 +72,15 @@ class NotificationManager{
     -notificationPrTimePeriod(map nat to set of Notification)
     -time: Time
     +AddNotification(Shift, Employee, nat)
+    +DeleteNotificationsForEmployee(Employee)
+    +DeleteNotificationsForShift(Shift)
+    +DeleteNotification(Shift, Employee, Timeslot)
     +GetNotificationsPrTimePeriod(): map nat to set of Notification
     +GetNotificationTimes(): seq of nat
     +GetTime(): Time
     +Run()
-    -SendNotifications(set of Notification)
+    -SendNotifications(set of Notification, nat)
+    -RemoveEmptyNotificationTimes();
 }
 
 

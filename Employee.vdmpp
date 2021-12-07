@@ -14,9 +14,11 @@ Employee(empId, prof) ==
     profession := prof;
 );
 
-public SendNotification: Shift * Timeslot ==> ()
-SendNotification(shift, t) ==
+public SendNotification: Shift * Timeslot * nat ==> ()
+SendNotification(shift, t, notificationTime) ==
 (
+    IO`print("\nTime step ");
+    IO`print(notificationTime);
     IO`print("\nEmployee ");
     IO`print(id);
     IO`print(" remember shift ");

@@ -4,7 +4,8 @@ operations
 protected runTest : () ==> ()
 runTest() ==
 (IsShiftVacantTest();
-IsShiftVacantFalseTest());
+IsShiftVacantFalseTest();
+GetAvailableSlotsTest());
 
 protected IsShiftVacantTest: () ==> ()
 IsShiftVacantTest() ==
@@ -20,6 +21,19 @@ IsShiftVacantFalseTest() ==
 	dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> 1});
     shift.AddEmployeeToShift(employee);
     assertTrue(shift.IsShiftVacant(<Salesman>) = false);
-)
+);
 
+protected GetAvailableSlotsTest: () ==> ()
+GetAvailableSlotsTest() ==
+(
+    dcl salesManLimit: nat := 2;
+    dcl shift : Shift := new Shift("4321",{<SoftwareEngineer> |-> 2, <Salesman> |-> salesManLimit});
+    dcl employee: Employee := new Employee("1234", <Salesman>);
+
+    assertTrue(shift.GetAvailableSlots(employee) = salesManLimit);
+    shift.AddEmployeeToShift(employee);
+    assertTrue(shift.GetAvailableSlots(employee) = salesManLimit - 1);
+
+
+);
 end ShiftTest

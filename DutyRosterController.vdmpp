@@ -59,6 +59,7 @@ post employee in set shiftToEmployees(shift) and
 public AddShiftToDutyRoster : Timeslot * Shift ==> ()
 AddShiftToDutyRoster(timeslot,shift) == 
 (
+    shift.Reset();
     dutyRoster := dutyRoster munion {timeslot |-> shift};
 )
 pre not IsShiftPartOfDutyRoster(shift, rng(dutyRoster)) and
@@ -100,6 +101,29 @@ DeleteEmployeeFromDutyRoster(emp) ==
 )
 pre IsEmployeePartOfDutyRoster(emp, employees);
 
+public RemoveEmployeeFromShift: Employee * Shift ==> ()
+RemoveEmployeeFromShift(emp, shift) ==
+(
+    dcl shiftToEmployeesTemp: map Shift to set of Employee := shiftToEmployees;
+    dcl employeeToShiftsTemp: map Employee to set of Shift := employeeToShifts;
+    if shiftToEmployees(shift) \ {emp} = {} 
+        then
+            shiftToEmployeesTemp := {shift} <-: shiftToEmployees
+        else 
+            shiftToEmployeesTemp(shift) := shiftToEmployees(shift) \ {emp};
+    if employeeToShifts(emp) \ {shift} = {} 
+        then 
+            employeeToShiftsTemp := {emp} <-: employeeToShifts 
+        else
+            employeeToShiftsTemp(emp) := employeeToShifts(emp) \ {shift};
+    atomic(
+        employeeToShifts := employeeToShiftsTemp;
+        shiftToEmployees := shiftToEmployeesTemp;
+    );
+    notificationManager.DeleteNotification(shift, emp, (inverse dutyRoster)(shift));
+)
+pre IsEmployeePartOfShift(emp, shiftToEmployees, shift);
+
 public GetAvailableTimeslotsMatchingExpertise : Employee ==> set of Timeslot
 GetAvailableTimeslotsMatchingExpertise(emp) ==
     let prof = emp.GetProfession()
@@ -115,7 +139,7 @@ post RESULT subset dom(dutyRoster);
 
 public GetAssignedTimeslots : Employee ==> set of Timeslot
 GetAssignedTimeslots(emp) ==
-    return {t | t in set dom dutyRoster & dutyRoster(t) in set employeeToShifts(emp)
+    return {t | t in set dom dutyRoster & emp in set dom(employeeToShifts) and dutyRoster(t) in set employeeToShifts(emp)
                                             and let mk_(-, endTime) = t in endTime > time.GetTime() }
 pre IsEmployeePartOfDutyRoster(emp, employees)
 post RESULT subset dom dutyRoster;
@@ -141,7 +165,7 @@ IsShiftInTheFuture(shift) ==
 
 public PaymentOverPeriod: Employee * nat * nat ==> nat
 PaymentOverPeriod(emp, from, until) ==
-    let timeslots = {t | t in set dom(dutyRoster) & dutyRoster(t) in set employeeToShifts(emp)} 
+    let timeslots = {t | t in set dom(dutyRoster) & emp in set dom(employeeToShifts) and dutyRoster(t) in set employeeToShifts(emp)} 
     in
         payment.PaymentOverPeriod(emp, timeslots, from, until)
 pre from < until and 

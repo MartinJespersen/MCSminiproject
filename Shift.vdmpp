@@ -9,11 +9,6 @@ inv dom(professionsCurrentlyAssigned) = dom(requiredProfessions) and
 forall prof in set dom(professionsCurrentlyAssigned) & professionsCurrentlyAssigned(prof) <= requiredProfessions(prof);
 inv card dom(requiredProfessions) <> 0; 
 
-private timeslot: [Timeslot] := nil;
-
-inv dom(professionsCurrentlyAssigned) subset dom(requiredProfessions);
-inv forall profession in set (dom(requiredProfessions) inter dom(professionsCurrentlyAssigned)) &
-    professionsCurrentlyAssigned(profession) <= requiredProfessions(profession)
 
 operations
 public Shift : ID * map Profession to nat ==> Shift
@@ -23,7 +18,7 @@ Shift(shiftId, reqProf) ==
     requiredProfessions := reqProf;
     professionsCurrentlyAssigned := { prof |-> 0 | prof in set dom(reqProf)}
 ) 
-pre dom(reqProf) <> {} and forall i in set rng reqProf & i <> 0;
+pre dom(reqProf) <> {} and forall i in set rng reqProf & i > 0;
 
 
 
@@ -37,24 +32,23 @@ AddEmployeeToShift(employee) ==
 pre  employee.GetProfession() in set dom professionsCurrentlyAssigned;
 
 
-pure public GetAvailableSlots: Profession ==> nat 
-GetAvailableSlots(prof) ==
-    return requiredProfessions(prof) - professionsCurrentlyAssigned(prof)
-pre prof in set dom requiredProfessions and prof in set dom professionsCurrentlyAssigned
-post RESULT <=  requiredProfessions(prof) and RESULT >= 0;
+pure public GetAvailableSlots: Employee ==> nat 
+GetAvailableSlots(emp) ==
+    let prof = emp.GetProfession() in 
+        return requiredProfessions(prof) - professionsCurrentlyAssigned(prof)
+pre emp.GetProfession() in set dom requiredProfessions and emp.GetProfession() in set dom professionsCurrentlyAssigned
+post RESULT <=  requiredProfessions(emp.GetProfession()) and RESULT >= 0;
 
 pure public IsShiftVacant : Profession ==> bool
 IsShiftVacant(prof) ==
     return prof in set dom requiredProfessions and 
     professionsCurrentlyAssigned(prof) < requiredProfessions(prof);
 
-pure public GetRequiredProfessions : () ==> map Profession to nat
-GetRequiredProfessions() == 
-    return requiredProfessions;  
-
-pure public GetProfessionsCurrentlyAssigned : () ==> map Profession to nat
-GetProfessionsCurrentlyAssigned() == 
-    return professionsCurrentlyAssigned; 
+public Reset: () ==> () 
+Reset() ==
+(
+    professionsCurrentlyAssigned := {p |-> 0 | p in set dom(professionsCurrentlyAssigned)}
+);
 
 pure public GetId : () ==> ID
 GetId() == 
